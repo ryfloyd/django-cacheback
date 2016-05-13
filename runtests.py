@@ -26,6 +26,7 @@ if not settings.configured:
             'django.contrib.sites',
             'django.contrib.flatpages',
             'cacheback',
+            'cache_tagging.django_cache_tagging',
             'tests.dummyapp',
             ],
         BROKER_URL = 'django://',

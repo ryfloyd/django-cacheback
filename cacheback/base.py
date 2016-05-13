@@ -3,12 +3,13 @@ import logging
 import hashlib
 import collections
 
+from cache_tagging.django_cache_tagging import get_cache
 from django.core.cache import DEFAULT_CACHE_ALIAS
 from django.conf import settings
 import six
 
 from cacheback import tasks
-from cacheback.utils import get_cache
+from cacheback.utils import get_cache as get_django_cache
 
 logger = logging.getLogger('cacheback')
 
@@ -72,12 +73,18 @@ class Job(object):
     #: Overrides options for `refresh_cache.apply_async` (e.g. `queue`).
     task_options = {}
 
+    # for tagging we need to define tags to the cached items
+    tags = ()
+
     #: Cache statuses
     MISS, HIT, STALE = range(3)
 
     def __init__(self):
-        self.cache_alias = getattr(settings, 'CACHEBACK_CACHE_ALIAS', DEFAULT_CACHE_ALIAS)
-        self.cache = get_cache(self.cache_alias)
+        if getattr(settings, 'ENABLE_CACHE_TAGGING', False):
+            self.cache = get_cache()
+        else:
+            self.cache_alias = getattr(settings, 'CACHEBACK_CACHE_ALIAS', DEFAULT_CACHE_ALIAS)
+            self.cache = get_cache(self.cache_alias)
 
     # --------
     # MAIN API
@@ -207,7 +214,10 @@ class Job(object):
         :expiry: The expiry timestamp after which the result is stale
         :data: The data to cache
         """
-        self.cache.set(key, (expiry, data), self.cache_ttl)
+        if getattr(settings, 'ENABLE_CACHE_TAGGING', False):
+            self.cache.set(key, (expiry, data), self.tags, self.cache_ttl)
+        else:
+            self.cache.set(key, (expiry, data), self.cache_ttl)
 
         if getattr(settings, 'CACHEBACK_VERIFY_CACHE_WRITE', True):
             # We verify that the item was cached correctly.  This is to avoid a
@@ -215,9 +225,14 @@ class Job(object):
             # without warning.
             __, cached_data = self.cache.get(key, (None, None))
             if data is not None and cached_data is None:
-                raise RuntimeError(
-                    "Unable to save data of type %s to cache" % (
-                        type(data)))
+                if getattr(settings, 'CACHEBACK_VERIFY_RAISE_ERROR', True):
+                    raise RuntimeError(
+                        "Unable to save data of type %s to cache. Key: %s, Data: %s, Tags: %s, Expiry: %s" % (
+                            type(data), key, data, self.tags, expiry))
+                else:
+                    logger.error(
+                        "Unable to save data of type %s to cache. Key: %s, Data: %s, Tags: %s, Expiry: %s",
+                        type(data), key, data, self.tags, expiry)
 
     def refresh(self, *args, **kwargs):
         """

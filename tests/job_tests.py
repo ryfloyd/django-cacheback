@@ -3,7 +3,7 @@ from django.test.utils import override_settings
 from django.core.cache import cache
 from django.core.cache.backends.dummy import DummyCache
 import six
-
+from cache_tagging.django_cache_tagging import cache
 import cacheback.base
 from cacheback.base import Job
 

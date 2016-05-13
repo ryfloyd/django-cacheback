@@ -24,6 +24,7 @@ setup(
         'django>=1.3',
         'celery',
         'six',
+        'cache-tagging==0.7.7.11'
     ],
     # See http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[

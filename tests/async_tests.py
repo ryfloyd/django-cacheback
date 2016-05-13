@@ -1,8 +1,10 @@
 import time
 
-from django.core.cache import cache
+from cache_tagging.django_cache_tagging import cache
+from django.core.cache import cache as django_cache
 from django.test import TestCase
 from django.test.utils import override_settings
+from django.conf import settings
 import mock
 
 from cacheback.base import Job
@@ -37,7 +39,10 @@ class TestJobWithStaleSyncRefreshAttributeSet(TestCase):
         self.job.refresh()
 
     def tearDown(self):
-        cache.clear()
+        if getattr(settings, 'ENABLE_CACHE_TAGGING', False):
+            cache.clear()
+        else:
+            django_cache.clear()
 
     def test_hits_cache_within_cache_lifetime(self):
         self.assertEqual('testing', self.job.get())

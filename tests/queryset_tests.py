@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.core.cache import cache
-
+from cache_tagging.django_cache_tagging import cache
 from cacheback.base import Job
 from cacheback.queryset import QuerySetFilterJob, QuerySetGetJob
 from tests.dummyapp import models

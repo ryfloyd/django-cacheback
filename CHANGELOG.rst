@@ -2,6 +2,11 @@
 Changelog
 =========
 
+1.0.1
+~~~
+
+* TheZebra: Added support for cache-tagging
+
 1.0
 ~~~
 * Support Django versions >= 1.7
